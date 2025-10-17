@@ -1,0 +1,270 @@
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import React, { useState } from "react";
+import { StyleSheet, TouchableOpacity } from "react-native";
+
+type Operation = "+" | "-" | "*" | "/" | "=" | "C" | "CE";
+
+interface CalculatorButton {
+	label: string;
+	value: Operation | string;
+	type: "number" | "operation" | "function";
+	span?: number;
+}
+
+export default function CalculatorScreen() {
+	const [display, setDisplay] = useState("0");
+	const [previousValue, setPreviousValue] = useState<number | null>(null);
+	const [operation, setOperation] = useState<Operation | null>(null);
+	const [waitingForOperand, setWaitingForOperand] = useState(false);
+
+	const buttons: CalculatorButton[][] = [
+		[
+			{ label: "C", value: "C", type: "function" },
+			{ label: "CE", value: "CE", type: "function" },
+			{ label: "⌫", value: "backspace", type: "function" },
+			{ label: "÷", value: "/", type: "operation" }
+		],
+		[
+			{ label: "7", value: "7", type: "number" },
+			{ label: "8", value: "8", type: "number" },
+			{ label: "9", value: "9", type: "number" },
+			{ label: "×", value: "*", type: "operation" }
+		],
+		[
+			{ label: "4", value: "4", type: "number" },
+			{ label: "5", value: "5", type: "number" },
+			{ label: "6", value: "6", type: "number" },
+			{ label: "-", value: "-", type: "operation" }
+		],
+		[
+			{ label: "1", value: "1", type: "number" },
+			{ label: "2", value: "2", type: "number" },
+			{ label: "3", value: "3", type: "number" },
+			{ label: "+", value: "+", type: "operation" }
+		],
+		[
+			{ label: "0", value: "0", type: "number", span: 2 },
+			{ label: ".", value: ".", type: "number" },
+			{ label: "=", value: "=", type: "operation" }
+		]
+	];
+
+	const performCalculation = (firstValue: number, secondValue: number, operation: Operation): number => {
+		switch (operation) {
+			case "+":
+				return firstValue + secondValue;
+			case "-":
+				return firstValue - secondValue;
+			case "*":
+				return firstValue * secondValue;
+			case "/":
+				return secondValue !== 0 ? firstValue / secondValue : 0;
+			default:
+				return secondValue;
+		}
+	};
+
+	const handleButtonPress = (value: string | Operation) => {
+		if (typeof value === "string" && value === "backspace") {
+			handleBackspace();
+			return;
+		}
+
+		if (typeof value === "string" && value === "C") {
+			handleClear();
+			return;
+		}
+
+		if (typeof value === "string" && value === "CE") {
+			handleClearEntry();
+			return;
+		}
+
+		if (typeof value === "string" && value === ".") {
+			handleDecimal();
+			return;
+		}
+
+		if (typeof value === "string" && !isNaN(Number(value))) {
+			handleNumber(value);
+			return;
+		}
+
+		if (typeof value === "string" && ["+", "-", "*", "/", "="].includes(value)) {
+			handleOperation(value as Operation);
+			return;
+		}
+	};
+
+	const handleNumber = (num: string) => {
+		if (waitingForOperand) {
+			setDisplay(num);
+			setWaitingForOperand(false);
+		} else {
+			setDisplay(display === "0" ? num : display + num);
+		}
+	};
+
+	const handleOperation = (nextOperation: Operation) => {
+		const inputValue = parseFloat(display);
+
+		if (previousValue === null) {
+			setPreviousValue(inputValue);
+		} else if (operation) {
+			const currentValue = previousValue || 0;
+			const newValue = performCalculation(currentValue, inputValue, operation);
+
+			setDisplay(String(newValue));
+			setPreviousValue(newValue);
+		}
+
+		setWaitingForOperand(true);
+		setOperation(nextOperation);
+	};
+
+	const handleDecimal = () => {
+		if (waitingForOperand) {
+			setDisplay("0.");
+			setWaitingForOperand(false);
+		} else if (display.indexOf(".") === -1) {
+			setDisplay(display + ".");
+		}
+	};
+
+	const handleClear = () => {
+		setDisplay("0");
+		setPreviousValue(null);
+		setOperation(null);
+		setWaitingForOperand(false);
+	};
+
+	const handleClearEntry = () => {
+		setDisplay("0");
+	};
+
+	const handleBackspace = () => {
+		if (display.length > 1) {
+			setDisplay(display.slice(0, -1));
+		} else {
+			setDisplay("0");
+		}
+	};
+
+	const getButtonStyle = (button: CalculatorButton) => {
+		const baseStyle = [styles.button];
+
+		if (button.type === "number") {
+			baseStyle.push(styles.numberButton);
+		} else if (button.type === "operation") {
+			baseStyle.push(styles.operationButton);
+		} else {
+			baseStyle.push(styles.functionButton);
+		}
+
+		if (button.span === 2) {
+			baseStyle.push(styles.spanTwo);
+		}
+
+		return baseStyle;
+	};
+
+	const getButtonTextStyle = (button: CalculatorButton) => {
+		const baseStyle = [styles.buttonText];
+
+		if (button.type === "operation") {
+			baseStyle.push(styles.operationButtonText);
+		} else if (button.type === "function") {
+			baseStyle.push(styles.functionButtonText);
+		}
+
+		return baseStyle;
+	};
+
+	return (
+		<ThemedView style={styles.container}>
+			{/* 显示屏 */}
+			<ThemedView style={styles.displayContainer}>
+				<ThemedText style={styles.displayText} numberOfLines={1}>
+					{display}
+				</ThemedText>
+			</ThemedView>
+
+			{/* 按钮网格 */}
+			<ThemedView style={styles.buttonContainer}>
+				{buttons.map((row, rowIndex) => (
+					<ThemedView key={rowIndex} style={styles.buttonRow}>
+						{row.map((button, buttonIndex) => (
+							<TouchableOpacity key={buttonIndex} style={getButtonStyle(button)} onPress={() => handleButtonPress(button.value)} activeOpacity={0.7}>
+								<ThemedText style={getButtonTextStyle(button)}>{button.label}</ThemedText>
+							</TouchableOpacity>
+						))}
+					</ThemedView>
+				))}
+			</ThemedView>
+		</ThemedView>
+	);
+}
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		backgroundColor: "#000"
+	},
+	displayContainer: {
+		flex: 1,
+		justifyContent: "flex-end",
+		alignItems: "flex-end",
+		paddingHorizontal: 20,
+		paddingVertical: 40,
+		backgroundColor: "#000"
+	},
+	displayText: {
+		fontSize: 48,
+		fontWeight: "300",
+		color: "#fff",
+		textAlign: "right"
+	},
+	buttonContainer: {
+		paddingHorizontal: 10,
+		paddingBottom: 20
+	},
+	buttonRow: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		marginBottom: 10
+	},
+	button: {
+		width: 70,
+		height: 70,
+		borderRadius: 35,
+		justifyContent: "center",
+		alignItems: "center",
+		marginHorizontal: 5
+	},
+	spanTwo: {
+		width: 150
+	},
+	numberButton: {
+		backgroundColor: "#333"
+	},
+	operationButton: {
+		backgroundColor: "#ff9500"
+	},
+	functionButton: {
+		backgroundColor: "#a6a6a6"
+	},
+	buttonText: {
+		fontSize: 24,
+		fontWeight: "400",
+		color: "#fff"
+	},
+	operationButtonText: {
+		fontSize: 28,
+		fontWeight: "500"
+	},
+	functionButtonText: {
+		fontSize: 20,
+		fontWeight: "500"
+	}
+});
