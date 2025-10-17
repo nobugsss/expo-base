@@ -1,7 +1,9 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import React, { useEffect, useState } from "react";
+import { API_ENDPOINTS } from "@/constants/api";
+import React, { useCallback, useEffect, useState } from "react";
 import { Alert, StyleSheet, TouchableOpacity } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ServerTimeResponse {
 	success: boolean;
@@ -14,6 +16,7 @@ interface ServerTimeResponse {
 }
 
 export default function ServerTimeScreen() {
+	const insets = useSafeAreaInsets();
 	const [serverTime, setServerTime] = useState<string>("");
 	const [serverTimezone, setServerTimezone] = useState<string>("");
 	const [isLoading, setIsLoading] = useState(false);
@@ -21,9 +24,9 @@ export default function ServerTimeScreen() {
 	const [isAutoRefresh, setIsAutoRefresh] = useState(false);
 	const [error, setError] = useState<string>("");
 
-	const API_URL = "http://localhost:3000/api/time/time";
+	const API_URL = API_ENDPOINTS.TIME;
 
-	const fetchServerTime = async () => {
+	const fetchServerTime = useCallback(async () => {
 		setIsLoading(true);
 		setError("");
 
@@ -73,7 +76,7 @@ export default function ServerTimeScreen() {
 		} finally {
 			setIsLoading(false);
 		}
-	};
+	}, [API_URL]);
 
 	const toggleAutoRefresh = () => {
 		setIsAutoRefresh(!isAutoRefresh);
@@ -106,16 +109,16 @@ export default function ServerTimeScreen() {
 				clearInterval(interval);
 			}
 		};
-	}, [isAutoRefresh]);
+	}, [isAutoRefresh, fetchServerTime]);
 
 	// 组件挂载时获取一次时间
 	useEffect(() => {
 		fetchServerTime();
-	}, []);
+	}, [fetchServerTime]);
 
 	return (
 		<ThemedView style={styles.container}>
-			<ThemedView style={styles.content}>
+			<ThemedView style={[styles.content, { paddingTop: insets.top + 20 }]}>
 				{/* 标题 */}
 				<ThemedText type="title" style={styles.title}>
 					服务器时间
@@ -167,7 +170,8 @@ const styles = StyleSheet.create({
 	},
 	content: {
 		flex: 1,
-		padding: 20,
+		paddingHorizontal: 20,
+		paddingBottom: 20,
 		justifyContent: "center"
 	},
 	title: {
@@ -179,7 +183,8 @@ const styles = StyleSheet.create({
 	timeContainer: {
 		alignItems: "center",
 		marginBottom: 40,
-		paddingVertical: 30,
+		paddingVertical: 40,
+		paddingHorizontal: 20,
 		backgroundColor: "rgba(0,0,0,0.05)",
 		borderRadius: 16
 	},
@@ -187,11 +192,13 @@ const styles = StyleSheet.create({
 		alignItems: "center"
 	},
 	timeText: {
-		fontSize: 32,
+		fontSize: 28,
 		fontWeight: "bold",
 		textAlign: "center",
 		marginBottom: 10,
-		color: "#0a7ea4"
+		color: "#0a7ea4",
+		paddingVertical: 10,
+		lineHeight: 36
 	},
 	timezoneText: {
 		fontSize: 16,

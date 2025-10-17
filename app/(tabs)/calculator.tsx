@@ -2,6 +2,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import React, { useState } from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Operation = "+" | "-" | "*" | "/" | "=" | "C" | "CE";
 
@@ -13,6 +14,7 @@ interface CalculatorButton {
 }
 
 export default function CalculatorScreen() {
+	const insets = useSafeAreaInsets();
 	const [display, setDisplay] = useState("0");
 	const [previousValue, setPreviousValue] = useState<number | null>(null);
 	const [operation, setOperation] = useState<Operation | null>(null);
@@ -152,7 +154,7 @@ export default function CalculatorScreen() {
 	};
 
 	const getButtonStyle = (button: CalculatorButton) => {
-		const baseStyle = [styles.button];
+		const baseStyle: any[] = [styles.button];
 
 		if (button.type === "number") {
 			baseStyle.push(styles.numberButton);
@@ -170,7 +172,7 @@ export default function CalculatorScreen() {
 	};
 
 	const getButtonTextStyle = (button: CalculatorButton) => {
-		const baseStyle = [styles.buttonText];
+		const baseStyle: any[] = [styles.buttonText];
 
 		if (button.type === "operation") {
 			baseStyle.push(styles.operationButtonText);
@@ -184,14 +186,14 @@ export default function CalculatorScreen() {
 	return (
 		<ThemedView style={styles.container}>
 			{/* 显示屏 */}
-			<ThemedView style={styles.displayContainer}>
+			<ThemedView style={[styles.displayContainer, { paddingTop: insets.top + 40 }]}>
 				<ThemedText style={styles.displayText} numberOfLines={1}>
 					{display}
 				</ThemedText>
 			</ThemedView>
 
 			{/* 按钮网格 */}
-			<ThemedView style={styles.buttonContainer}>
+			<ThemedView style={[styles.buttonContainer, { paddingBottom: insets.bottom + 20 }]}>
 				{buttons.map((row, rowIndex) => (
 					<ThemedView key={rowIndex} style={styles.buttonRow}>
 						{row.map((button, buttonIndex) => (
@@ -216,18 +218,21 @@ const styles = StyleSheet.create({
 		justifyContent: "flex-end",
 		alignItems: "flex-end",
 		paddingHorizontal: 20,
-		paddingVertical: 40,
+		paddingBottom: 20,
 		backgroundColor: "#000"
 	},
 	displayText: {
-		fontSize: 48,
+		paddingBottom: 15,
+		paddingTop: 15,
+		fontSize: 42,
 		fontWeight: "300",
 		color: "#fff",
-		textAlign: "right"
+		textAlign: "right",
+		lineHeight: 50
 	},
 	buttonContainer: {
 		paddingHorizontal: 10,
-		paddingBottom: 20
+		paddingTop: 10
 	},
 	buttonRow: {
 		flexDirection: "row",
