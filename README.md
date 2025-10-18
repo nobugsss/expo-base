@@ -58,23 +58,36 @@ API 配置位于 `constants/api.ts` 文件中。
 
 #### 方法 1: 使用环境变量（推荐）
 
-1. 复制 `env.template` 文件为 `.env`：
+1. 复制 `.env.example` 文件为 `.env`：
 
 ```bash
-cp env.template .env
+cp .env.example .env
 ```
 
 2. 编辑 `.env` 文件，修改相应的配置：
 
-```
-EXPO_PUBLIC_BASE_URL=http://your-new-domain.com
-EXPO_PUBLIC_API_BASE_URL=http://your-new-domain.com/api
+```env
+# 基础 URL（开发环境使用本机IP地址）
+EXPO_PUBLIC_BASE_URL=http://192.168.1.5:3000
+
+# API 基础 URL
+EXPO_PUBLIC_API_BASE_URL=http://192.168.1.5:3000/api
+
+# 环境配置
 EXPO_PUBLIC_NODE_ENV=development
+
+# API 超时时间（毫秒）
+EXPO_PUBLIC_API_TIMEOUT=10000
 ```
 
 3. 重启应用使配置生效
 
-**注意**: `.env` 文件是可选的，如果不存在会使用默认配置。建议使用 `.env` 文件来管理不同环境的配置。
+**重要说明**:
+
+- `.env` 文件包含默认配置，会提交到版本控制
+- `.env.local` 文件用于本地个性化配置，已被 `.gitignore` 忽略
+- `.env.example` 文件包含配置模板和说明
+- 移动端开发时，请使用本机IP地址而不是 `127.0.0.1` 或 `localhost` 或 `服务器ip`
 
 #### 方法 2: 直接修改配置文件（不推荐）
 
@@ -100,9 +113,9 @@ EXPO_PUBLIC_NODE_ENV=development
 
 ```typescript
 export const API_ENDPOINTS = {
-	TIME: `${API_CONFIG.API_BASE_URL}/time/time`,
-	USER: `${API_CONFIG.API_BASE_URL}/user/profile`, // 新增端点
-	DATA: `${API_CONFIG.API_BASE_URL}/data/list` // 新增端点
+ TIME: `${API_CONFIG.API_BASE_URL}/time/time`,
+ USER: `${API_CONFIG.API_BASE_URL}/user/profile`, // 新增端点
+ DATA: `${API_CONFIG.API_BASE_URL}/data/list` // 新增端点
 } as const;
 ```
 
@@ -124,8 +137,8 @@ expo-base/
 │   └── theme.ts         # 主题配置
 ├── hooks/               # 自定义 Hooks
 ├── assets/             # 静态资源
-├── env.template        # 环境变量配置模板
-└── .env               # 环境变量配置（需要手动创建）
+├── .env.example       # 环境变量配置模板和说明
+└── .env               # 环境变量配置（默认配置）
 ```
 
 ## 开发说明

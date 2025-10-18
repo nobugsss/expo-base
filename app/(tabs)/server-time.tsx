@@ -1,18 +1,15 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { API_ENDPOINTS } from "@/constants/api";
+import { API_CONFIG, API_ENDPOINTS } from "@/constants/api";
+import { apiGet } from "@/utils/api";
 import React, { useCallback, useEffect, useState } from "react";
 import { Alert, StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-interface ServerTimeResponse {
-	success: boolean;
-	message: string;
-	data: {
-		timestamp: number;
-		datetime: string;
-		timezone: string;
-	};
+interface ServerTimeData {
+	timestamp: number;
+	datetime: string;
+	timezone: string;
 }
 
 export default function ServerTimeScreen() {
@@ -31,23 +28,7 @@ export default function ServerTimeScreen() {
 		setError("");
 
 		try {
-			const response = await fetch(API_URL, {
-				method: "GET",
-				headers: {
-					"Content-Type": "application/json"
-				}
-			});
-
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-
-			const data: ServerTimeResponse = await response.json();
-
-			// 检查响应是否成功
-			if (!data.success) {
-				throw new Error(data.message || "服务器返回错误");
-			}
+			const data = await apiGet<ServerTimeData>(API_URL);
 
 			// 解析服务器时间
 			const serverDate = new Date(data.data.datetime);
@@ -157,6 +138,7 @@ export default function ServerTimeScreen() {
 				<ThemedView style={styles.infoContainer}>
 					<ThemedText style={styles.infoText}>📡 API 地址: {API_URL}</ThemedText>
 					<ThemedText style={styles.infoText}>🔄 自动刷新间隔: 5秒</ThemedText>
+					<ThemedText style={styles.infoText}>⏱️ 请求超时: {API_CONFIG.TIMEOUT / 1000}秒</ThemedText>
 					<ThemedText style={styles.infoText}>💡 提示: 请确保服务器正在运行</ThemedText>
 				</ThemedView>
 			</ThemedView>
