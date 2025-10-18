@@ -1,5 +1,6 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { formatNumber, safeCalculate } from "@/utils/math";
 import React, { useState } from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,6 +20,7 @@ export default function CalculatorScreen() {
 	const [previousValue, setPreviousValue] = useState<number | null>(null);
 	const [operation, setOperation] = useState<Operation | null>(null);
 	const [waitingForOperand, setWaitingForOperand] = useState(false);
+	const [error, setError] = useState<string>("");
 
 	const buttons: CalculatorButton[][] = [
 		[
@@ -53,17 +55,29 @@ export default function CalculatorScreen() {
 	];
 
 	const performCalculation = (firstValue: number, secondValue: number, operation: Operation): number => {
-		switch (operation) {
-			case "+":
-				return firstValue + secondValue;
-			case "-":
-				return firstValue - secondValue;
-			case "*":
-				return firstValue * secondValue;
-			case "/":
-				return secondValue !== 0 ? firstValue / secondValue : 0;
-			default:
-				return secondValue;
+		try {
+			setError(""); // 清除之前的错误
+			
+			switch (operation) {
+				case "+":
+					return safeCalculate(firstValue, secondValue, '+');
+				case "-":
+					return safeCalculate(firstValue, secondValue, '-');
+				case "*":
+					return safeCalculate(firstValue, secondValue, '*');
+				case "/":
+					if (secondValue === 0) {
+						throw new Error('不能除以零');
+					}
+					return safeCalculate(firstValue, secondValue, '/');
+				default:
+					return secondValue;
+			}
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : '计算错误';
+			setError(errorMessage);
+			console.error('Calculation error:', error);
+			return 0;
 		}
 	};
 
@@ -117,7 +131,9 @@ export default function CalculatorScreen() {
 			const currentValue = previousValue || 0;
 			const newValue = performCalculation(currentValue, inputValue, operation);
 
-			setDisplay(String(newValue));
+			// 使用格式化函数处理显示
+			const formattedValue = formatNumber(newValue);
+			setDisplay(formattedValue);
 			setPreviousValue(newValue);
 		}
 
@@ -139,10 +155,12 @@ export default function CalculatorScreen() {
 		setPreviousValue(null);
 		setOperation(null);
 		setWaitingForOperand(false);
+		setError("");
 	};
 
 	const handleClearEntry = () => {
 		setDisplay("0");
+		setError("");
 	};
 
 	const handleBackspace = () => {
@@ -187,9 +205,15 @@ export default function CalculatorScreen() {
 		<ThemedView style={styles.container}>
 			{/* 显示屏 */}
 			<ThemedView style={[styles.displayContainer, { paddingTop: insets.top + 40 }]}>
-				<ThemedText style={styles.displayText} numberOfLines={1}>
-					{display}
-				</ThemedText>
+				{error ? (
+					<ThemedText style={styles.errorText} numberOfLines={1}>
+						{error}
+					</ThemedText>
+				) : (
+					<ThemedText style={styles.displayText} numberOfLines={1}>
+						{display}
+					</ThemedText>
+				)}
 			</ThemedView>
 
 			{/* 按钮网格 */}
@@ -229,6 +253,15 @@ const styles = StyleSheet.create({
 		color: "#fff",
 		textAlign: "right",
 		lineHeight: 50
+	},
+	errorText: {
+		paddingBottom: 15,
+		paddingTop: 15,
+		fontSize: 24,
+		fontWeight: "400",
+		color: "#ff6b6b",
+		textAlign: "right",
+		lineHeight: 30
 	},
 	buttonContainer: {
 		paddingHorizontal: 10,
